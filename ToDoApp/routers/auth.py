@@ -9,14 +9,11 @@ from ..database import SessionLocal
 from sqlalchemy.orm import Session
 from ..models import User
 from fastapi.templating import Jinja2Templates
-
+from ..config import SECRET_KEY, ALGORITHM 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"]
 )
-
-SECRET_KEY="d05b137768fd334d592bf16b76ed0d838b021c8972214b36757872b14eeb942d"
-ALGORITHM="HS256"
 
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
