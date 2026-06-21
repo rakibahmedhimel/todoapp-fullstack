@@ -1,5 +1,5 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Boolean
-from .database import Base
+from ToDoApp.database import Base
 
 class User(Base):
     __tablename__ = "users"

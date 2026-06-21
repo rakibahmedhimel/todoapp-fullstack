@@ -4,10 +4,11 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from starlette import status
-from ..database import SessionLocal
-from ..models import Todos
-from .auth import get_current_user
 from typing import Annotated
+
+from ToDoApp.database import SessionLocal
+from ToDoApp.models import Todos
+from ToDoApp.routers.auth import get_current_user
 
 templates = Jinja2Templates(directory='ToDoApp/templates')
 

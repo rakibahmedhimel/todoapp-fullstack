@@ -5,11 +5,14 @@ from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
 from pydantic import BaseModel
-from ..database import SessionLocal
 from sqlalchemy.orm import Session
-from ..models import User
 from fastapi.templating import Jinja2Templates
-from ..config import SECRET_KEY, ALGORITHM 
+
+from ToDoApp.config import SECRET_KEY, ALGORITHM 
+from ToDoApp.models import User
+from ToDoApp.database import SessionLocal
+
+
 router = APIRouter(
     prefix="/auth",
     tags=["auth"]
@@ -47,19 +50,25 @@ templates = Jinja2Templates(directory="ToDoApp/templates")
 ### pages
 @router.get("/login-page")
 def render_login_page(request : Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse("login.html", {'request': request})
 
 @router.get("/register-page")
 def render_register_page(request : Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse("register.html", {'request': request})
 
 ###endpoints
-def authenticate_user(username:str, password:str, db):
+def authenticate_user(username: str, password: str, db):
     user = db.query(User).filter(User.username == username).first()
+
     if not user:
         return False
-    if not bcrypt_context.verify(password, user.hashed_password):
+
+    try:
+        if not bcrypt_context.verify(password, user.hashed_password):
+            return False
+    except Exception:
         return False
+
     return user
 
 
@@ -82,20 +91,32 @@ async def get_current_user(token : Annotated[str, Depends(oauth2_bearer)]):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user")
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_user(db: db_dep, create_user_request : CreateUserRequest):
+async def create_user(db: db_dep, create_user_request: CreateUserRequest):
+
+    password_bytes = create_user_request.password.encode("utf-8")
+
+    if len(password_bytes) > 72:
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be 72 characters or fewer"
+        )
+
     create_user_model = User(
-        username = create_user_request.username,
-        email = create_user_request.email,
-        first_name = create_user_request.first_name,
-        last_name = create_user_request.last_name,
-        hashed_password = bcrypt_context.hash(create_user_request.password),
-        role = create_user_request.role,
-        is_active = True,
-        phone_number = create_user_request.phone_number
+        username=create_user_request.username,
+        email=create_user_request.email,
+        first_name=create_user_request.first_name,
+        last_name=create_user_request.last_name,
+        hashed_password=bcrypt_context.hash(create_user_request.password),
+        role=create_user_request.role,
+        is_active=True,
+        phone_number=create_user_request.phone_number
     )
+
     db.add(create_user_model)
     db.commit()
     db.refresh(create_user_model)
+
+    return {"message": "User created successfully"}
 
 
 @router.post("/token", response_model=Token)
